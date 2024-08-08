@@ -8,6 +8,7 @@ import LoginCheck from "../../Component/common/LoginCheck";
 import {ContestState} from "../../Redux/Action/contest";
 import {connect} from "react-redux";
 import {TimeRangeState} from "../../Utils/Time";
+import IssueFloatButton from "../../Component/issues/IssueFloatButton";
 
 
 const CContestInfo = (props: any) => {
@@ -44,6 +45,7 @@ const CContestInfo = (props: any) => {
                     maxWidth: "1500px",
                     marginLeft: Math.max(0, (pageWidth as number - minWidth) / 2)
                 }}>
+                    <IssueFloatButton service_id={contestId} contestInfo={props.ContestInfo[contestId]}/>
                     <ContestHeader/>
                     {contestInfo !== undefined && timeState !== "wait" && (
                         <div style={{marginTop: 25}}>

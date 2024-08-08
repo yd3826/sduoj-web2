@@ -62,6 +62,7 @@ export interface UserInfo{
     userAgent?: string
     features?: any
     gender?:any
+    token:string|null;
 }
 
 export interface UserState{

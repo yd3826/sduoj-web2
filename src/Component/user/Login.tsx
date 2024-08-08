@@ -1,4 +1,4 @@
-import React, {Dispatch, useRef, useState} from "react";
+import React, {Dispatch, useEffect, useRef, useState} from "react";
 import {Button, Card, Space, Tabs} from "antd";
 import {LoginForm, ProFormInstance, ProFormText} from "@ant-design/pro-form";
 import {LockOutlined, UserOutlined,} from '@ant-design/icons';
@@ -11,6 +11,7 @@ import Logo from "Assert/img/sduoj.png"
 import ForgetPass from "./Form/ForgetPass";
 import ItemEmail from "./Form/Item/ItemEmail";
 import CApi from "../../Utils/API/c-api";
+import tApi from "../issues/t-api";
 
 type LoginType = 'SDUCAS' | 'account' | "email";
 
@@ -28,7 +29,9 @@ const Login = (props: any) => {
     const passwordLogin = () => {
         formRef.current?.validateFields(["username", "password"]).then((value) => {
             CApi.login(value).then((resData: any) => {
-                afterLogin(resData)
+                tApi.auth({name:resData.username}).then((res:any)=>{
+                    afterLogin({...resData,token:res.token})
+                })
             })
         })
     }

@@ -325,5 +325,8 @@
   "DownloadFirstRejectCase": "Download First Reject Case",
   "PublicTestCaseInfo": "Public test case info",
   "new email": "New Email",
-  "ShowAllInformation": "Show All Information"
+  "ShowAllInformation": "Show All Information",
+  "Notification": "Notification",
+  "LastModifiedDate": "Last Modified Date",
+  "NotificationDetails": "Notification Details"
 }
