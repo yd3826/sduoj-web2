@@ -12,14 +12,13 @@ import NTFCContent from "./element/Content";
 import {ChatSocket} from "./ChatSocket";
 import {useDispatch, useSelector} from "react-redux";
 import TableRowDeleteButton from "../common/Table/TableRowDeleteButton";
-import identify from "../../Utils/identify";
 
 const Information = (props:any)=>{
     const [visible,setVisible] = useState(false);
     const [showId, setShowId] = useState(0);
     const [showTitle, setShowTitle] = useState("");
     // const contestInfo = props.contestInfo;
-    const dataSource = useSelector((state:any)=>state.TableReduce.tableData[`Notification${props.serviceId}`])
+    const dataSource = useSelector((state:any)=>state.TableReduce.tableData[`Notification${props.serviceId}`]);
     const dispatch = useDispatch();
     const userInfo = useSelector((state: any) => {
         return state.UserReducer?.userInfo
@@ -35,11 +34,12 @@ const Information = (props:any)=>{
         </>
     )
     function receiveNt(value:any){
+        if(dataSource===undefined)return
         if(value.mode===3)return
         const len = dataSource['dataSource'].length;
         if(value.nt_id <= dataSource['dataSource'][len-1].nt_id)
             return
-        setDataSource([...dataSource['dataSource'],value],`Notification${props.serviceId}`);
+        setDataSource([value,...dataSource['dataSource']],`Notification${props.serviceId}`);
     }
 
     return (
@@ -54,7 +54,7 @@ const Information = (props:any)=>{
             >
                 <NTFCContent id={showId}/>
             </Modal>
-            <ChatSocket message={isSend.state} data={isSend.data} token={userInfo.token}
+            <ChatSocket sendMessage={props.sendMessage} lastMessage={props.lastMessage} readyState={props.readyState} isLogin={props.isLogin} message={isSend.state} data={isSend.data}
                 dataHandle={(data:any)=>{receiveNt(data)}}
             />
             <Card
@@ -84,11 +84,12 @@ const Information = (props:any)=>{
                 className={'information'}
             >
             <TableWithPagination
+                size={'middle'}
                 name={`Notification${props.serviceId}`}
                 API={(data:any)=>{
                     return tApi.getNoticeList({name:userInfo.username,data:{...data,ct_id:props.serviceId}})
                 }}
-                defaultPageSize={12}
+                defaultPageSize={5}
                 columns={[
                     {
                         title:'ID',
