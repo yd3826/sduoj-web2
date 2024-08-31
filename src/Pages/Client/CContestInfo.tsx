@@ -6,7 +6,7 @@ import React, {Dispatch, Suspense, useEffect, useState} from "react";
 import Loading from "../../Utils/Loading";
 import LoginCheck from "../../Component/common/LoginCheck";
 import {ContestState} from "../../Redux/Action/contest";
-import {connect} from "react-redux";
+import {connect, useSelector} from "react-redux";
 import {TimeRangeState} from "../../Utils/Time";
 import IssueFloatButton from "../../Component/issues/IssueFloatButton";
 
@@ -16,7 +16,9 @@ const CContestInfo = (props: any) => {
     const contestInfo = props.ContestInfo[contestId]
     const timeState = contestInfo !== undefined ? TimeRangeState(contestInfo.gmtStart, contestInfo.gmtEnd) : undefined
     let minWidth = 500
-
+    const userInfo = useSelector((state: any) => {
+        return state.UserReducer?.userInfo
+    })
     const [pageWidth, setPageWidth] = useState<number>(document.querySelector('body')?.clientWidth as number)
 
     useEffect(() => {
@@ -45,7 +47,7 @@ const CContestInfo = (props: any) => {
                     maxWidth: "1500px",
                     marginLeft: Math.max(0, (pageWidth as number - minWidth) / 2)
                 }}>
-                    <IssueFloatButton service_id={contestId} contestInfo={props.ContestInfo[contestId]}/>
+                    <IssueFloatButton token={userInfo === undefined? ' ':userInfo.token} service_id={contestId} contestInfo={props.ContestInfo[contestId]}/>
                     <ContestHeader/>
                     {contestInfo !== undefined && timeState !== "wait" && (
                         <div style={{marginTop: 25}}>

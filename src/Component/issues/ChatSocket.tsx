@@ -1,8 +1,6 @@
-import React, {useEffect, useState} from 'react';
-import useWebSocket, {ReadyState} from 'react-use-websocket';
-import {useSelector} from "react-redux";
-import {message} from "antd";
-import tApi from "./t-api";
+import React, {useEffect} from 'react';
+import {ReadyState} from 'react-use-websocket';
+
 
 export interface IWebSocket {
     queryList: string[]
@@ -11,15 +9,10 @@ export interface IWebSocket {
 }
 
 export const ChatSocket = (props:any) => {
-    const isLogin = useSelector((state: any) => state.UserReducer.isLogin)
-    const {sendMessage, lastMessage, readyState} = useWebSocket(
-        "wss://oj.cs.sdu.edu.cn:8889/imapi" + `/ws/handle/${props.token}`, {share: false},isLogin,
-    );
-
-
+    const {isLogin,sendMessage, lastMessage, readyState}=props;
 
     useEffect(() => {
-        if (lastMessage !== null) {
+        if (lastMessage !== null&&lastMessage !== undefined) {
             console.log('received message', lastMessage.data)
             const data = JSON.parse(lastMessage.data);
             props.dataHandle(data);

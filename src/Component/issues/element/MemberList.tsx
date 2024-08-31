@@ -7,7 +7,7 @@ import Avatar from "../../user/Avatar";
 const MemberList = (props:any)=>{
     const [items,setItems] = useState<any>();
     function handleMemberClick(value:any, e:any) {
-        const {setCurrent, setUnread} = props
+        const {setCurrent} = props
         const items:any = document.querySelectorAll(".chat-room-group-members-item")
         for (let value of items) {
             value.className = "chat-room-group-members-item"

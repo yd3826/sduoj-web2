@@ -49,15 +49,29 @@ const ChatRoom = (props: any) => {
     const [loading, setLoading] = useState(false);
     const [msgs, setMsgs] = useState<Map<string, SingleMessage[]>>(new Map());
     const [groupList, setGroupList] = useState<Map<string, GroupInfo>>(new Map());
-    const [isSend, setIsSend] = useState<{ state: number, data: any }>({state: 0, data: undefined});
     const [cntRcv,setCntRcv] = useState(0);
     const [current, setCurrent] = useState<string>(''); //群聊id
     const textRef: React.RefObject<HTMLTextAreaElement> = createRef();
     const userInfo = useSelector((state: any) => {
         return state.UserReducer?.userInfo
     })
+    const [isSend, setIsSend] = useState<{ state: number, data: any }>({state: 0, data: undefined});
 
-
+    function singleGroup(dt:any)
+    {
+        let tmp:GroupInfo = {members:[],builder:'',is_read:1,mg_id:dt.mg_id,lastMID:0,lastTime:''};
+        let len = dt.members.length;
+        for (let j = 0; j < len - 1; j++)
+            tmp.members.push({
+                memberName: dt.members[j].username,
+                email: dt.members[j].email,
+            });
+        tmp.builder = dt.members[len-1].build_username;
+        tmp.is_read = dt.is_read;
+        tmp.lastMID = dt.m_id;
+        tmp.lastTime = dt.m_gmt_create;
+        return tmp;
+    }
     //首先需要判断是否已经建立群聊
     useEffect(() => {
         tApi.getMemberList({name:userInfo.username,data:{ct_id: props.serviceId}}).then((res: any) => {
@@ -66,18 +80,7 @@ const ChatRoom = (props: any) => {
             else {
                 let temp: Map<string, GroupInfo> = new Map();
                 for (let i = 0; i < res.length; i++) {
-                    let tmp:GroupInfo = {members:[],builder:'',is_read:1,mg_id:res[i].mg_id,lastMID:0,lastTime:''};
-                    let len = res[i].members.length;
-                    for (let j = 0; j < len - 1; j++)
-                        tmp.members.push({
-                            memberName: res[i].members[j].username,
-                            email: res[i].members[j].email,
-                        });
-                    tmp.builder = res[i].members[len-1].build_username;
-                    tmp.is_read = res[i].is_read;
-                    tmp.lastMID = res[i].m_id;
-                    tmp.lastTime = res[i].m_gmt_create;
-                    temp.set(res[i].mg_id,tmp);
+                    temp.set(res[i].mg_id,singleGroup(res[i]));
                 }
                 setGroupList(temp);
                 setMode(false);
@@ -90,15 +93,21 @@ const ChatRoom = (props: any) => {
     //换群聊的时候，如果没有信息需要请求信息
     //包括信息请求，和已读未读判断
     useEffect(() => {
+        if(current !== '')//将该群聊的is_read设置为1
+        {
+            const temp = copyMap(groupList);
+            temp.get(current).is_read = 1;
+            setGroupList(temp);
+        }
         if (current !== ''&&msgs.get(current) === undefined) {//选中群聊，且群聊中没有信息
             let tmpGL = copyMap(groupList);
             tmpGL.get(current).is_read = 1;
             setGroupList(tmpGL);
             tApi.getMessages({name:userInfo.username,data:{mg_id: current, last_m_id: null}})
                 .then((res: any) => {
-                    let temp = copyMap(msgs);
                     if(res === undefined) //没有信息
                         return
+                    let temp = copyMap(msgs);
                     temp.set(current, res.map((value: any) => {
                         return {
                             content: value.m_content,
@@ -156,14 +165,27 @@ const ChatRoom = (props: any) => {
         //当前消息可以通过getMessage得到，则不处理(或者之后推送)
         if(Array.from(groupList.keys()).length === 0)
             return
+        //在线的时候，有新群聊的建立
+        if(data.members !== undefined)
+        {
+            const temp = copyMap(groupList);
+            temp.set(data.mg_id, singleGroup(data));
+            setGroupList(temp);
+            return
+        }
         // @ts-ignore
         if(data.m_id <= groupList.get(data.mg_id)?.lastMID)
             return
-        //判断接收消息是否在当前群聊，如果在则想后端ws发送已读信息
+        //判断接收消息是否在当前群聊，如果在则向后端ws发送已读信息
         if(data.mg_id === current)
         {
             setCntRcv(cntRcv-1)
             setIsSend({state:isSend.state+1,data:{mode:4,username:userInfo.username,m_id:data.m_id}})
+        }else{
+            //不在当前群聊收到消息，则将is_read设为0
+            const temp = copyMap(groupList);
+            temp.get(data.mg_id).is_read = 0;
+            setGroupList(temp);
         }
         const msg = {
             mg_id: data.mg_id,
@@ -187,10 +209,9 @@ const ChatRoom = (props: any) => {
             {!mode ?
                 (
                     <>
-                        <div className={'processing-sendmsg'}>
-                            <ChatSocket message={isSend.state} data={isSend.data} dataHandle={receiveMSG}
-                                        token={userInfo.token}/>
-                        </div>
+                        <ChatSocket sendMessage={props.sendMessage} lastMessage={props.lastMessage} readyState={props.readyState} isLogin={props.isLogin}
+                            message={isSend.state} data={isSend.data} dataHandle={receiveMSG}
+                        />
                         <Row className={"chat-room"}>
                             <Col span={5}>
                                 <MemberList setCurrent={setCurrent} memberList={groupList}/>
@@ -210,9 +231,9 @@ const ChatRoom = (props: any) => {
                             </Col>
                         </Row>
                     </>
-                ) : false ?(<Button onClick={() => {
+                ) : true ? (<Button onClick={() => {
                     setLoading(true);
-                    tApi.addGroup({name:userInfo.username,data:{ct_id: props.serviceId}})
+                    tApi.addGroup({name: userInfo.username, data: {ct_id: props.serviceId}})
                         .then(() => {
                             setMode(false);
                             setLoading(false);
